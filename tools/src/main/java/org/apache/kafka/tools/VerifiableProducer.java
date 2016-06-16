@@ -143,6 +143,14 @@ public class VerifiableProducer {
                 .metavar("CONFIG_FILE")
                 .help("Producer config properties file.");
 
+        parser.addArgument("--key-range")
+                .action(store())
+                .required(false)
+                .type(Long.class)
+                .metavar("KEY-RANGE")
+                .dest("keyRange")
+                .help("If specified, each produced value have a key ");
+
         parser.addArgument("--value-prefix")
             .action(store())
             .required(false)
