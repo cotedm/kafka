@@ -34,28 +34,25 @@ object ConsoleProducer {
     try {
         val config = new ProducerConfig(args)
         val topic = getReaderProps(config).getProperty("topic")
-
         val stdinReader: BufferedReader = new BufferedReader(new InputStreamReader(System.in))
 
-        val producer: KafkaProducer[Array[Byte], Array[Byte]] =
-          new KafkaProducer[Array[Byte], Array[Byte]](getNewProducerProps(config))
-
-        var record: ProducerRecord[Array[Byte], Array[Byte]] = null
         var message: String = stdinReader.readLine
+        //val props: Properties = new Properties
+        //props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.brokerList)
+        //props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
+        //props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
+        val producer: KafkaProducer[Array[Byte], Array[Byte]] = new KafkaProducer[Array[Byte], Array[Byte]](getNewProducerProps(config))
+        var record: ProducerRecord[Array[Byte], Array[Byte]] = null
 
         while (message != null) {
           {
             record = new ProducerRecord[Array[Byte], Array[Byte]](topic, message.getBytes)
             producer.send(record)
+            System.out.println("Produced" + message)
             message = stdinReader.readLine
           }
         }
-        /* print final results */
-        producer.close
     } catch {
-      case e: joptsimple.OptionException =>
-        System.err.println(e.getMessage)
-        System.exit(1)
       case e: Exception =>
         e.printStackTrace
         System.exit(1)
@@ -81,7 +78,7 @@ object ConsoleProducer {
 
   def getNewProducerProps(config: ProducerConfig): Properties = {
     val props = producerProps(config)
-
+    //val props: Properties = new Properties
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, config.brokerList)
     props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, config.compressionCodec)
     props.put(ProducerConfig.SEND_BUFFER_CONFIG, config.socketBuffer.toString)
@@ -113,10 +110,10 @@ object ConsoleProducer {
       .ofType(classOf[String])
     val syncOpt = parser.accepts("sync", "If set message send requests to the brokers are synchronously, one at a time as they arrive.")
     val compressionCodecOpt = parser.accepts("compression-codec", "The compression codec: either 'none', 'gzip', 'snappy', or 'lz4'." +
-                                                                  "If specified without value, then it defaults to 'gzip'")
-                                    .withOptionalArg()
-                                    .describedAs("compression-codec")
-                                    .ofType(classOf[String])
+      "If specified without value, then it defaults to 'gzip'")
+      .withOptionalArg()
+      .describedAs("compression-codec")
+      .ofType(classOf[String])
     val batchSizeOpt = parser.accepts("batch-size", "Number of messages to send in a single batch if they are not being sent synchronously.")
       .withRequiredArg
       .describedAs("size")
@@ -203,9 +200,9 @@ object ConsoleProducer {
       .describedAs("prop")
       .ofType(classOf[String])
     val producerPropertyOpt = parser.accepts("producer-property", "A mechanism to pass user-defined properties in the form key=value to the producer. ")
-            .withRequiredArg
-            .describedAs("producer_prop")
-            .ofType(classOf[String])
+      .withRequiredArg
+      .describedAs("producer_prop")
+      .ofType(classOf[String])
     val producerConfigOpt = parser.accepts("producer.config", s"Producer config properties file. Note that $producerPropertyOpt takes precedence over this config.")
       .withRequiredArg
       .describedAs("config file")
@@ -225,10 +222,10 @@ object ConsoleProducer {
     val sync = options.has(syncOpt)
     val compressionCodecOptionValue = options.valueOf(compressionCodecOpt)
     val compressionCodec = if (options.has(compressionCodecOpt))
-                             if (compressionCodecOptionValue == null || compressionCodecOptionValue.isEmpty)
-                               DefaultCompressionCodec.name
-                             else compressionCodecOptionValue
-                           else NoCompressionCodec.name
+      if (compressionCodecOptionValue == null || compressionCodecOptionValue.isEmpty)
+        DefaultCompressionCodec.name
+      else compressionCodecOptionValue
+    else NoCompressionCodec.name
     val batchSize = options.valueOf(batchSizeOpt)
     val sendTimeout = options.valueOf(sendTimeoutOpt)
     val queueSize = options.valueOf(queueSizeOpt)
