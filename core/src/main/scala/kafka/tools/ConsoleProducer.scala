@@ -19,12 +19,14 @@ package kafka.tools
 
 import java.io._
 import java.util.Properties
+import java.util.concurrent.Future
 
 import joptsimple._
 import kafka.message.{DefaultCompressionCodec, NoCompressionCodec}
 import kafka.serializer._
 import kafka.utils.{CommandLineUtils, ToolsUtils}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer._
+import org.apache.kafka.clients.producer.internals.ErrorLoggingCallback
 
 object ConsoleProducer {
 
@@ -42,16 +44,19 @@ object ConsoleProducer {
         //props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
         val producer: KafkaProducer[Array[Byte], Array[Byte]] = new KafkaProducer[Array[Byte], Array[Byte]](getNewProducerProps(config))
         var record: ProducerRecord[Array[Byte], Array[Byte]] = null
+        var future: Future[RecordMetadata] = null
 
         while (message != null) {
           {
             record = new ProducerRecord[Array[Byte], Array[Byte]](topic, message.getBytes)
             System.out.println("Record: " + record)
-            producer.send(record)
+            future = producer.send(record, new ErrorLoggingCallback(topic, message.getBytes(), message.getBytes(), true))
+            future.get()
             System.out.println("Produced" + message)
             message = stdinReader.readLine
           }
         }
+      producer.close()
     } catch {
       case e: Exception =>
         e.printStackTrace
@@ -78,8 +83,8 @@ object ConsoleProducer {
     props.put(ProducerConfig.ACKS_CONFIG, config.requestRequiredAcks.toString)
     props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, config.requestTimeoutMs.toString)
     props.put(ProducerConfig.RETRIES_CONFIG, config.messageSendMaxRetries.toString)
-//    props.put(ProducerConfig.LINGER_MS_CONFIG, config.sendTimeout.toString)
-//    props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, config.maxMemoryBytes.toString)
+    props.put(ProducerConfig.LINGER_MS_CONFIG, config.sendTimeout.toString)
+    props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, config.maxMemoryBytes.toString)
     props.put(ProducerConfig.BATCH_SIZE_CONFIG, config.maxPartitionMemoryBytes.toString)
     props.put(ProducerConfig.CLIENT_ID_CONFIG, "console-producer")
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer")
