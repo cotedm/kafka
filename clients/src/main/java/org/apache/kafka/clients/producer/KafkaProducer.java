@@ -656,6 +656,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             throw new IllegalArgumentException("The timeout cannot be negative.");
 
         log.info("Closing the Kafka producer with timeoutMillis = {} ms.", timeUnit.toMillis(timeout));
+        flush();
         // this will keep track of the first encountered exception
         AtomicReference<Throwable> firstException = new AtomicReference<Throwable>();
         boolean invokedFromCallback = Thread.currentThread() == this.ioThread;
